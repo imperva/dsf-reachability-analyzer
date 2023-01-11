@@ -2,6 +2,7 @@ import boto3
 import time
 import json
 
+default_ports = "22,8080,8443,3030,27117"
 
 
 def init_client():
@@ -63,20 +64,23 @@ def fetch_network_insights_analyses_result(analysis_id):
     return status, network_path_found
 
 
-subnet1 = input("Subnet1:") 
-subnet2 = input("Subnet2:") 
-analyze_bi_direction = input("Analizy bi-direction (y/n):")
-analyze_specific_ports = input("Analizy specific ports (list coma delimited):")
+def get_inputs():
+    subnet1 = input("Subnet1:") 
+    subnet2 = input("Subnet2:") 
+    analyze_bi_direction = input("Analizy bi-direction (y/n):")
+    analyze_specific_ports = input("Analizy specific ports (list coma delimited):")
 
-if analyze_specific_ports == '':
-    analyze_specific_ports = "22,8080,8443,3030,27117"
+    if analyze_specific_ports == '':
+        analyze_specific_ports = default_ports
 
-analyze_specific_ports_list = list(analyze_specific_ports.split(","))
-        # DestinationPort=22
-        # DestinationPort=8080
-        # DestinationPort=8443
-        # DestinationPort=3030
-        # DestinationPort=27117
+    analyze_specific_ports_list = list(analyze_specific_ports.split(","))
+
+    return {
+        "subnet1" : subnet1,
+        "subnet2" : subnet2,
+        "analyze_bi_direction" : analyze_bi_direction,
+        "analyze_specific_ports_list" : analyze_specific_ports_list
+    }
 
 
 def analyze(subnet1, subnet2, bi_direction, analyze_specific_ports_list):
@@ -90,7 +94,6 @@ def analyze(subnet1, subnet2, bi_direction, analyze_specific_ports_list):
         "path_info" : []  
     }
     
-    # results = []
     for port in analyze_specific_ports_list:
         port = int(port)
         status, network_path_found = fetch_network_insights_analyses_result(start_network_insights_analysis(create_network_insights_path(subnet1_eni, subnet2_eni, port)))
@@ -105,10 +108,13 @@ def analyze(subnet1, subnet2, bi_direction, analyze_specific_ports_list):
         analyzation_result["path_info"].append(path_result)
     return analyzation_result
 
-client = init_client()
-analyzation_list = analyze(subnet1,subnet2,analyze_bi_direction,analyze_specific_ports_list)
 
-print(analyzation_list)
+if __name__ == '__main__':
+    client = init_client()
+    inputs = get_inputs()
+    analyzation_list = analyze(inputs["subnet1"],inputs["subnet2"],inputs["analyze_bi_direction"],inputs["analyze_specific_ports_list"])
+
+    print(analyzation_list)
 
 
 # Print the details of the path
