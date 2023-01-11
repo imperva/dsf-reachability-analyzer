@@ -5,7 +5,7 @@ import json
 default_ports = "22,8080,8443,3030,27117"
 
 
-def init_client():
+def init_client(region):
     # Create a session with the specified AWS access key and secret key
     session = boto3.Session(
         aws_access_key_id='AKIARUGULLAY4R4YGN3G',
@@ -66,10 +66,11 @@ def fetch_network_insights_analyses_result(analysis_id):
 
 
 def get_inputs():
-    subnet1 = input("Please enter the source Subnet ID - Subnet1:") 
-    subnet2 = input("Please enter the destination Subnet ID - Subnet2:") 
+    region = input("Please enter the region to test: ") 
+    subnet1 = input("Please enter the source Subnet ID - Subnet1: ") 
+    subnet2 = input("Please enter the destination Subnet ID - Subnet2: ") 
     # analyze_bi_direction = input("Analizy bi-direction (y/n):")
-    analyze_specific_ports = input("Analizy specific ports (list comma delimited):")
+    analyze_specific_ports = input("Analizy specific ports (list comma delimited): ")
 
     if analyze_specific_ports == '':
         analyze_specific_ports = default_ports
@@ -80,7 +81,8 @@ def get_inputs():
         "subnet1" : subnet1,
         "subnet2" : subnet2,
         "analyze_bi_direction" : False,
-        "analyze_specific_ports_list" : analyze_specific_ports_list
+        "analyze_specific_ports_list" : analyze_specific_ports_list,
+        "region" : region
     }
 
 
@@ -104,6 +106,7 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port):
     create_network_insights_path_response = create_network_insights_path(subnet1_eni, subnet2_eni, port)
     start_network_insights_analysis_resposne = start_network_insights_analysis(create_network_insights_path_response["NetworkInsightsPathId"])
     fetch_network_insights_analyses_result_response = fetch_network_insights_analyses_result(start_network_insights_analysis_resposne["NetworkInsightsAnalysisId"])
+    
     if analyzation_result["full_network_path_found"] != False:
         analyzation_result["full_network_path_found"] = fetch_network_insights_analyses_result_response["network_path_found"]
 
@@ -111,7 +114,10 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port):
             "network_path_found" : fetch_network_insights_analyses_result_response["network_path_found"],
             "source": subnet1_eni,
             "destination": subnet2_eni,
-            "port": port
+            "port": port,
+            "info": fetch_network_insights_analyses_result_response["info"],
+            "insights_path_id" : create_network_insights_path_response["NetworkInsightsPathId"],
+            "insights_analysis_id" : start_network_insights_analysis_resposne["NetworkInsightsAnalysisId"]
         }
     analyzation_result["path_info"].append(path_result)
     print_header2("Analysis on port: " + str(port) + " completed")
@@ -148,12 +154,27 @@ def prints(text):
     print(text)
 
 
+def write_to_disk(analyzation_list):
+    file_name=str(int(time.time())) + ".txt"
+    text_file = open(file_name, "w")
+    n = text_file.write(json.dumps(analyzation_list, indent=4, sort_keys=True, default=str))
+    text_file.close()
+
+    prints("Full info printed in file: " + file_name)
+
+def print_links_to_console(region, analyzation_list):
+    prints("Full info analysis can be found in AWS Console:")
+    for path_info in analyzation_list["path_info"]:
+        prints("   - For '" +  path_info["insights_path_id"] + "' https://" + region + ".console.aws.amazon.com/vpc/home?region=" + region + "#NetworkPath:pathId=" + path_info["insights_path_id"])
+
 if __name__ == '__main__':
     print_header1("eDSF Sonar Network Analyzer Tool")
 
-    client = init_client()
-    
     inputs = get_inputs()
+
+    client = init_client(inputs["region"])
+    
+
 
     print_header2("Analysis Started")
 
@@ -165,14 +186,11 @@ if __name__ == '__main__':
         inputs["analyze_specific_ports_list"])
 
 
-    print (json.dumps(analyzation_list, indent=4, sort_keys=True, default=str))
+    print_header2("Analysis completed. Full Network Path Found: " + str(analyzation_list["full_network_path_found"]))
 
+    write_to_disk(analyzation_list)
+    
+    print_links_to_console(inputs["region"], analyzation_list)
 
-# Print the details of the path
+    # print (json.dumps(analyzation_list, indent=4, sort_keys=True, default=str))
 
-# # print(response_create)
-# print("----------------")
-# print("Test: " + status)
-# print("Network: " + str(network_path_found))
-# print("Details ************")
-# # print (json.dumps(response_describe, indent=4, sort_keys=True, default=str))
