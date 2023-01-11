@@ -190,7 +190,8 @@ if __name__ == '__main__':
         endpoints["subnet1_eni"],
         endpoints["subnet2_eni"],
         inputs["analyze_specific_ports_list"])
-    print_header1("Analysis completed. Full Network Path Found: " + str(analyzation_list["full_network_path_found"]))
+
     delete_network_endpoints(endpoints["subnet1_eni"],endpoints["subnet2_eni"])
+    print_header1("Analysis completed. Full Network Path Found: " + str(analyzation_list["full_network_path_found"]))
     write_to_disk(analyzation_list)
     print_links_to_console(inputs["region"], analyzation_list)
