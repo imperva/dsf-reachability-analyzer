@@ -122,20 +122,29 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port):
     analyzation_result["path_info"].append(path_result)
     print_header2("Analysis on port: " + str(port) + " completed")
 
-def create_eni(subnet1, eni):
-    prints("Creating eni in Subnet: " + subnet1)
-    time.sleep(5)
-    prints("eni created: " + eni)
-    subnet1_eni = eni
-    return subnet1_eni
+def create_eni(subnetId):
+    prints("Creating eni in Subnet: " + subnetId)
+    response = client.create_network_interface(Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,SubnetId = subnetId)
+    eniId = response["NetworkInterface"]["NetworkInterfaceId"]
+    prints("eni created: " + eniId)
+    return eniId
+
+def delete_eni(eni_id):
+    prints("Deleting eni: " + eni_id)
+    response = client.delete_network_interface(NetworkInterfaceId=eni_id)
 
 def create_network_endpoints(subnet1,subnet2):
-    subnet1_eni = create_eni(subnet1,"eni-07e760710fa0a7d09") #TEMP
-    subnet2_eni = create_eni(subnet2,"eni-0d94f19d7a00ed1a5") #TEMP
+    prints("Start creating Networking Endpoints")
+    subnet1_eni = create_eni(subnet1)
+    subnet2_eni = create_eni(subnet2)
     return {
         "subnet1_eni" : subnet1_eni,
         "subnet2_eni" : subnet2_eni
     }
+def delete_network_endpoints(eni1_id,eni2_id):
+    prints("Start deleting Networking Endpoints")
+    delete_eni(eni1_id)
+    delete_eni(eni2_id)
 
 def print_header1(text):
     print("")
@@ -169,28 +178,17 @@ def print_links_to_console(region, analyzation_list):
 
 if __name__ == '__main__':
     print_header1("eDSF Sonar Network Analyzer Tool")
-
     inputs = get_inputs()
-
     client = init_client(inputs["region"])
-    
-
-
     print_header2("Analysis Started")
-
     endpoints = create_network_endpoints(inputs["subnet1"],inputs["subnet2"])
-
     analyzation_list = analyze(
         endpoints["subnet1_eni"],
         endpoints["subnet2_eni"],
         inputs["analyze_specific_ports_list"])
-
-
     print_header2("Analysis completed. Full Network Path Found: " + str(analyzation_list["full_network_path_found"]))
-
+    delete_network_endpoints(endpoints["subnet1_eni"],endpoints["subnet2_eni"])
     write_to_disk(analyzation_list)
-    
     print_links_to_console(inputs["region"], analyzation_list)
 
-    # print (json.dumps(analyzation_list, indent=4, sort_keys=True, default=str))
 
