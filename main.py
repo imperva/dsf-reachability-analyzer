@@ -125,7 +125,19 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port):
 
 def create_eni(subnetId):
     prints("Creating eni in Subnet: " + subnetId)
-    response = client.create_network_interface(Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,SubnetId = subnetId)
+    response = client.create_network_interface(
+        Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
+        SubnetId = subnetId, 
+        TagSpecifications=[
+            {
+                'ResourceType': 'network-interface',
+                'Tags': [
+                    {
+                        'Key': 'project',
+                        'Value': 'dsf'
+                    }
+                ]
+            }])
     eniId = response["NetworkInterface"]["NetworkInterfaceId"]
     prints("eni created: " + eniId)
     return eniId
