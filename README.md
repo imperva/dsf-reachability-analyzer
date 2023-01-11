@@ -11,8 +11,10 @@
    <ol>
       <li>Run the script by entering the command <code>python main.py</code> in the command prompt.</li>
       <li>When asked to, enter a list of ports to analyze connectivity on, comma separated (e.g. "22,8080,8443"). If left blank, the script will use a default list of ports (22,8080,8443,3030,27117).</li>
-      **Note**: The script creates and deletes temporary Elastic Network Interfaces (ENIs) in order to perform the analysis. In case of failure, these ENIs may need to be deleted manually.
    </ol>
+   <p>
+         **Note**: The script creates and deletes temporary Elastic Network Interfaces (ENIs) in order to perform the analysis. In case of failure, these ENIs may need to be deleted manually.
+   </p>
    <h2>Functions</h2>
    <h3><code>init_client(region)</code></h3>
    <ul>
