@@ -5,12 +5,12 @@ import json
 default_ports = "22,8080,8443,3030,27117"
 
 
-def init_client(region):
+def init_client(access_key,secret_key,region):
     # Create a session with the specified AWS access key and secret key
     session = boto3.Session(
-        aws_access_key_id='AKIARUGULLAY4R4YGN3G',
-        aws_secret_access_key='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',
-        region_name='eu-west-3'
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        region_name=region
     )
 
     client = session.client('ec2')
@@ -66,7 +66,9 @@ def fetch_network_insights_analyses_result(analysis_id):
 
 
 def get_inputs():
-    region = input("Please enter the region to test: ") 
+    region = input("Please enter the AWS Region: ")
+    access_key = input("Please enter the AWS Access Key: ")
+    secret_key = input("Please enter the AWS Secrete Key: ")
     subnet1 = input("Please enter the source Subnet ID - Subnet1: ") 
     subnet2 = input("Please enter the destination Subnet ID - Subnet2: ") 
     # analyze_bi_direction = input("Analizy bi-direction (y/n):")
@@ -82,7 +84,9 @@ def get_inputs():
         "subnet2" : subnet2,
         "analyze_bi_direction" : False,
         "analyze_specific_ports_list" : analyze_specific_ports_list,
-        "region" : region
+        "region" : region,
+        "access_key" : access_key,
+        "secret_key" : secret_key
     }
 
 
@@ -179,16 +183,14 @@ def print_links_to_console(region, analyzation_list):
 if __name__ == '__main__':
     print_header1("eDSF Sonar Network Analyzer Tool")
     inputs = get_inputs()
-    client = init_client(inputs["region"])
+    client = init_client(inputs["access_key"], inputs["secret_key"], inputs["region"])
     print_header2("Analysis Started")
     endpoints = create_network_endpoints(inputs["subnet1"],inputs["subnet2"])
     analyzation_list = analyze(
         endpoints["subnet1_eni"],
         endpoints["subnet2_eni"],
         inputs["analyze_specific_ports_list"])
-    print_header2("Analysis completed. Full Network Path Found: " + str(analyzation_list["full_network_path_found"]))
+    print_header1("Analysis completed. Full Network Path Found: " + str(analyzation_list["full_network_path_found"]))
     delete_network_endpoints(endpoints["subnet1_eni"],endpoints["subnet2_eni"])
     write_to_disk(analyzation_list)
     print_links_to_console(inputs["region"], analyzation_list)
-
-
