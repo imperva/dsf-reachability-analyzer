@@ -9,7 +9,7 @@
    </ul>
    <h2>Usage</h2>
    <ol>
-      <li>Run the script by entering the command <code>python script-name.py</code> in the command prompt.</li>
+      <li>Run the script by entering the command <code>python main.py</code> in the command prompt.</li>
       <li>Enter the region to test the connectivity in.</li>
       <li>Enter the source Subnet ID (Subnet1).</li>
       <li>Enter the destination Subnet ID (Subnet2).</li>
