@@ -14,6 +14,7 @@
       <li>Enter the source Subnet ID (Subnet1).</li>
       <li>Enter the destination Subnet ID (Subnet2).</li>
       <li>Enter a list of ports to analyze connectivity on, comma separated (e.g. "22,8080,8443"). If left blank, the script will use a default list of ports (22,8080,8443,3030,27117).</li>
+      <li>**Note**: The script creates and deletes temporary Elastic Network Interfaces (ENIs) in order to perform the analysis. In case of failure, these ENIs may need to be deleted manually.</li>
    </ol>
    <h2>Functions</h2>
    <h3><code>init_client(region)</code></h3>

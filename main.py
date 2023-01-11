@@ -2,9 +2,6 @@ import boto3
 import time
 import json
 
-default_ports = "22,8080,8443,3030,27117"
-
-
 def init_client(access_key,secret_key,region):
     # Create a session with the specified AWS access key and secret key
     session = boto3.Session(
@@ -73,7 +70,7 @@ def get_inputs():
     subnet2 = input("Please enter the destination Subnet ID - Subnet2: ") 
     # analyze_bi_direction = input("Analizy bi-direction (y/n):")
     analyze_specific_ports = input("Analizy specific ports (list comma delimited): ")
-
+    default_ports = "22,8080,8443,3030,27117"
     if analyze_specific_ports == '':
         analyze_specific_ports = default_ports
 
