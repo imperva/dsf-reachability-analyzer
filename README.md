@@ -15,6 +15,10 @@
    <p>
          **Note**: The script creates and deletes temporary Elastic Network Interfaces (ENIs) in order to perform the analysis. In case of failure, these ENIs may need to be deleted manually.
    </p>
+    <h2>AWS IAM Roles</h2>
+    <p>
+    [See minimum Policy needed](https://github.com/imperva/dsf-reachability-analyzer/blob/master/iam_role.yml)
+    </p>
    <h2>Functions</h2>
    <h3><code>init_client(region)</code></h3>
    <ul>
