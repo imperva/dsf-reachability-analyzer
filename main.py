@@ -23,27 +23,22 @@ def create_network_insights_path(source, destination,port):
         Destination=destination,
         Protocol='tcp',
         DestinationPort=port
-        # DestinationPort=22
-        # DestinationPort=8080
-        # DestinationPort=8443
-        # DestinationPort=3030
-        # DestinationPort=27117
-
     )
-    print("NetworkInsightsPathId: " + response_create['NetworkInsightsPath']['NetworkInsightsPathId'])
     network_insights_path_id = response_create['NetworkInsightsPath']['NetworkInsightsPathId']
-    return network_insights_path_id
+    prints("Network Insight Path Created. NetworkInsightsPathId: " + network_insights_path_id)
 
+    
+    return response_create['NetworkInsightsPath']
 
-# response_create['NetworkInsightsPath']['NetworkInsightsPathId']
 def start_network_insights_analysis(network_insights_path_id):
     response_start = client.start_network_insights_analysis(
         NetworkInsightsPathId=network_insights_path_id
     )
 
     analysis_id = response_start['NetworkInsightsAnalysis']['NetworkInsightsAnalysisId']
-    print("NetworkInsightsAnalysisId: " + analysis_id)
-    return analysis_id
+    prints("Network Analisys Started. NetworkInsightsAnalysisId: " + analysis_id)
+
+    return response_start['NetworkInsightsAnalysis']
 
 
 def fetch_network_insights_analyses_result(analysis_id):    
@@ -55,20 +50,26 @@ def fetch_network_insights_analyses_result(analysis_id):
                 analysis_id,
             ])
         status = response_describe['NetworkInsightsAnalyses'][0]['Status']
-        print(status)
-        time.sleep(5.5)
+        prints("Waiting for Analysis completion. Status: "  + status)
+        time.sleep(5)
         if status != 'running':
             break
+    
+    full_info = response_describe['NetworkInsightsAnalyses'][0]
+    network_path_found = full_info['NetworkPathFound']
+    return {
+        "status" : status,
+        "network_path_found" : network_path_found,
+        "info" : full_info
+    } 
 
-    network_path_found = response_describe['NetworkInsightsAnalyses'][0]['NetworkPathFound']
-    return status, network_path_found
 
 
 def get_inputs():
-    subnet1 = input("Subnet1:") 
-    subnet2 = input("Subnet2:") 
-    analyze_bi_direction = input("Analizy bi-direction (y/n):")
-    analyze_specific_ports = input("Analizy specific ports (list coma delimited):")
+    subnet1 = input("Please enter the source Subnet ID - Subnet1:") 
+    subnet2 = input("Please enter the destination Subnet ID - Subnet2:") 
+    # analyze_bi_direction = input("Analizy bi-direction (y/n):")
+    analyze_specific_ports = input("Analizy specific ports (list comma delimited):")
 
     if analyze_specific_ports == '':
         analyze_specific_ports = default_ports
@@ -78,16 +79,14 @@ def get_inputs():
     return {
         "subnet1" : subnet1,
         "subnet2" : subnet2,
-        "analyze_bi_direction" : analyze_bi_direction,
+        "analyze_bi_direction" : False,
         "analyze_specific_ports_list" : analyze_specific_ports_list
     }
 
 
-def analyze(subnet1, subnet2, bi_direction, analyze_specific_ports_list):
-    # Create eni in subnet1
-    subnet1_eni ='eni-07e760710fa0a7d09'
-    # Create eni in subnet2
-    subnet2_eni = 'eni-0d94f19d7a00ed1a5'
+def analyze(subnet1_eni, subnet2_eni, analyze_specific_ports_list):
+
+    prints("Start analysis network connectivity of Subnet1 via: " + subnet1_eni + " --> to Subnet2 via " + subnet2_eni + ", on ports: " + str(analyze_specific_ports_list))
 
     analyzation_result = {
         "full_network_path_found" : True,
@@ -95,26 +94,78 @@ def analyze(subnet1, subnet2, bi_direction, analyze_specific_ports_list):
     }
     
     for port in analyze_specific_ports_list:
-        port = int(port)
-        status, network_path_found = fetch_network_insights_analyses_result(start_network_insights_analysis(create_network_insights_path(subnet1_eni, subnet2_eni, port)))
-        if analyzation_result["full_network_path_found"] != False:
-            analyzation_result["full_network_path_found"] = network_path_found
-        path_result = {
-            "network_path_found" : network_path_found,
+        analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port)
+    return analyzation_result
+
+def analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port):
+    port = int(port)
+    prints("Analyzing port: " + str(port))
+
+    create_network_insights_path_response = create_network_insights_path(subnet1_eni, subnet2_eni, port)
+    start_network_insights_analysis_resposne = start_network_insights_analysis(create_network_insights_path_response["NetworkInsightsPathId"])
+    fetch_network_insights_analyses_result_response = fetch_network_insights_analyses_result(start_network_insights_analysis_resposne["NetworkInsightsAnalysisId"])
+    if analyzation_result["full_network_path_found"] != False:
+        analyzation_result["full_network_path_found"] = fetch_network_insights_analyses_result_response["network_path_found"]
+
+    path_result = {
+            "network_path_found" : fetch_network_insights_analyses_result_response["network_path_found"],
             "source": subnet1_eni,
             "destination": subnet2_eni,
             "port": port
         }
-        analyzation_result["path_info"].append(path_result)
-    return analyzation_result
+    analyzation_result["path_info"].append(path_result)
+    print_header2("Analysis on port: " + str(port) + " completed")
+
+def create_eni(subnet1, eni):
+    prints("Creating eni in Subnet: " + subnet1)
+    time.sleep(5)
+    prints("eni created: " + eni)
+    subnet1_eni = eni
+    return subnet1_eni
+
+def create_network_endpoints(subnet1,subnet2):
+    subnet1_eni = create_eni(subnet1,"eni-07e760710fa0a7d09") #TEMP
+    subnet2_eni = create_eni(subnet2,"eni-0d94f19d7a00ed1a5") #TEMP
+    return {
+        "subnet1_eni" : subnet1_eni,
+        "subnet2_eni" : subnet2_eni
+    }
+
+def print_header1(text):
+    print("")
+    print('*********************************************************')
+    print('************ ' + text + " ")
+    print('*********************************************************')
+    print("")
+    print("")
+
+def print_header2(text):
+    print("")
+    print('************ ' + text)
+    print("")
+
+def prints(text):
+    print(text)
 
 
 if __name__ == '__main__':
-    client = init_client()
-    inputs = get_inputs()
-    analyzation_list = analyze(inputs["subnet1"],inputs["subnet2"],inputs["analyze_bi_direction"],inputs["analyze_specific_ports_list"])
+    print_header1("eDSF Sonar Network Analyzer Tool")
 
-    print(analyzation_list)
+    client = init_client()
+    
+    inputs = get_inputs()
+
+    print_header2("Analysis Started")
+
+    endpoints = create_network_endpoints(inputs["subnet1"],inputs["subnet2"])
+
+    analyzation_list = analyze(
+        endpoints["subnet1_eni"],
+        endpoints["subnet2_eni"],
+        inputs["analyze_specific_ports_list"])
+
+
+    print (json.dumps(analyzation_list, indent=4, sort_keys=True, default=str))
 
 
 # Print the details of the path
