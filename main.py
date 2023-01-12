@@ -1,6 +1,7 @@
 import boto3
 import time
 import json
+from itertools import combinations
 
 def init_client(access_key,secret_key,region):
     # Create a session with the specified AWS access key and secret key
@@ -89,7 +90,6 @@ def get_inputs():
     return {
         "subnet1" : subnet1,
         "subnet2" : subnet2,
-        "analyze_bi_direction" : False,
         "analyze_specific_ports_list" : analyze_specific_ports_list,
         "region" : region,
         "access_key" : access_key,
@@ -187,7 +187,7 @@ def prints(text):
 
 
 def write_to_disk(analysis_result):
-    file_name=str(int(time.time())) + ".txt"
+    file_name=str(int(time.time())) + ".json"
     text_file = open(file_name, "w")
     n = text_file.write(json.dumps(analysis_result, indent=4, sort_keys=True, default=str))
     text_file.close()
@@ -198,6 +198,53 @@ def print_links_to_console(region, analysis_result):
     prints("Full info analysis can be found in AWS Console:")
     for path_info in analysis_result["path_info"]:
         prints("   - For '" +  path_info["insights_path_id"] + "' https://" + region + ".console.aws.amazon.com/vpc/home?region=" + region + "#NetworkPath:pathId=" + path_info["insights_path_id"])
+
+
+
+
+def load_plan():
+
+
+    # Open the JSON file
+    with open("plan.json", "r") as json_file:
+        data = json.load(json_file)
+
+    # Create empty list and set to store the combinations
+    combinations = []
+    combination_set = set()
+
+    # Iterate over the hub list
+    for hub in data["hub"]:
+        # Iterate over the hub list again to find other hubs with the same keypairid
+        for other_hub in data["hub"]:
+            if hub["keypairid"] == other_hub["keypairid"] and hub["id"] != other_hub["id"]:
+                # Create a tuple of the subnets to use as a key in the set
+                subnet_tuple = (hub["subnet"], other_hub["subnet"])
+                subnet_tuple2 = (other_hub["subnet"], hub["subnet"])
+                # Check if the combination is already in the set
+                if subnet_tuple not in combination_set and subnet_tuple2 not in combination_set:
+                    # Add the combination to the set
+                    combination_set.add(subnet_tuple)
+                    combination_set.add(subnet_tuple2)
+                    # Add the combination of subnets to the list, with the first as "source" and second as "destination"
+                    combinations.append({"source": hub["subnet"], "destination": other_hub["subnet"]})
+                    # Add the combination of subnets to the list, with the second as "source" and first as "destination"
+                    combinations.append({"source": other_hub["subnet"], "destination": hub["subnet"]})
+                    
+        # Iterate over the gws list
+        for gw in data["gws"]:
+            # Check if the hub and gw have the same deploymentid
+            if hub["deploymentid"] == gw["deploymentid"]:
+                # Create a tuple of the subnets to use as a key in the set
+                subnet_tuple = (hub["subnet"], gw["subnet"])
+                # Check if the combination is already in the set
+                if subnet_tuple not in combination_set:
+                    # Add the combination to the set
+                    combination_set.add(subnet_tuple)
+                    # Add the combination of subnets to the list, with the hub as "source" and gw as "destination"
+                    combinations.append({"source": hub["subnet"], "destination": gw["subnet"]})
+
+    print(combinations)
 
 if __name__ == '__main__':
     print_header1("eDSF Sonar Network Analyzer Tool")
