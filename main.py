@@ -19,7 +19,17 @@ def create_network_insights_path(source, destination,port):
         Source=source,
         Destination=destination,
         Protocol='tcp',
-        DestinationPort=port
+        DestinationPort=port,
+         TagSpecifications=[
+            {
+                'ResourceType': 'network-insights-path',
+                'Tags': [
+                    {
+                        'Key': 'Name',
+                        'Value': source + "->" + destination + " :" + str(port)
+                    }
+                ]
+            }]
     )
     network_insights_path_id = response_create['NetworkInsightsPath']['NetworkInsightsPathId']
     prints("Network Insight Path Created. NetworkInsightsPathId: " + network_insights_path_id)
