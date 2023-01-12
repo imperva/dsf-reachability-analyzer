@@ -91,16 +91,16 @@ def analyze(subnet1_eni, subnet2_eni, analyze_specific_ports_list):
 
     prints("Start analysis network connectivity of Subnet1 via: " + subnet1_eni + " --> to Subnet2 via " + subnet2_eni + ", on ports: " + str(analyze_specific_ports_list))
 
-    analyzation_result = {
+    analysis_result = {
         "full_network_path_found" : True,
         "path_info" : []  
     }
     
     for port in analyze_specific_ports_list:
-        analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port)
-    return analyzation_result
+        analyze_per_port(subnet1_eni, subnet2_eni, analysis_result, port)
+    return analysis_result
 
-def analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port):
+def analyze_per_port(subnet1_eni, subnet2_eni, analysis_result, port):
     port = int(port)
     prints("Analyzing port: " + str(port))
 
@@ -108,8 +108,8 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port):
     start_network_insights_analysis_resposne = start_network_insights_analysis(create_network_insights_path_response["NetworkInsightsPathId"])
     fetch_network_insights_analyses_result_response = fetch_network_insights_analyses_result(start_network_insights_analysis_resposne["NetworkInsightsAnalysisId"])
     
-    if analyzation_result["full_network_path_found"] != False:
-        analyzation_result["full_network_path_found"] = fetch_network_insights_analyses_result_response["network_path_found"]
+    if analysis_result["full_network_path_found"] != False:
+        analysis_result["full_network_path_found"] = fetch_network_insights_analyses_result_response["network_path_found"]
 
     path_result = {
             "network_path_found" : fetch_network_insights_analyses_result_response["network_path_found"],
@@ -120,7 +120,7 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analyzation_result, port):
             "insights_path_id" : create_network_insights_path_response["NetworkInsightsPathId"],
             "insights_analysis_id" : start_network_insights_analysis_resposne["NetworkInsightsAnalysisId"]
         }
-    analyzation_result["path_info"].append(path_result)
+    analysis_result["path_info"].append(path_result)
     print_header2("Analysis on port: " + str(port) + " completed")
 
 def create_eni(subnetId):
@@ -176,17 +176,17 @@ def prints(text):
     print(text)
 
 
-def write_to_disk(analyzation_list):
+def write_to_disk(analysis_result):
     file_name=str(int(time.time())) + ".txt"
     text_file = open(file_name, "w")
-    n = text_file.write(json.dumps(analyzation_list, indent=4, sort_keys=True, default=str))
+    n = text_file.write(json.dumps(analysis_result, indent=4, sort_keys=True, default=str))
     text_file.close()
 
     prints("Full info printed in file: " + file_name)
 
-def print_links_to_console(region, analyzation_list):
+def print_links_to_console(region, analysis_result):
     prints("Full info analysis can be found in AWS Console:")
-    for path_info in analyzation_list["path_info"]:
+    for path_info in analysis_result["path_info"]:
         prints("   - For '" +  path_info["insights_path_id"] + "' https://" + region + ".console.aws.amazon.com/vpc/home?region=" + region + "#NetworkPath:pathId=" + path_info["insights_path_id"])
 
 if __name__ == '__main__':
@@ -195,12 +195,12 @@ if __name__ == '__main__':
     client = init_client(inputs["access_key"], inputs["secret_key"], inputs["region"])
     print_header2("Analysis Started")
     endpoints = create_network_endpoints(inputs["subnet1"],inputs["subnet2"])
-    analyzation_list = analyze(
+    analysis_result = analyze(
         endpoints["subnet1_eni"],
         endpoints["subnet2_eni"],
         inputs["analyze_specific_ports_list"])
 
     delete_network_endpoints(endpoints["subnet1_eni"],endpoints["subnet2_eni"])
-    print_header1("Analysis completed. Full Network Path Found: " + str(analyzation_list["full_network_path_found"]))
-    write_to_disk(analyzation_list)
-    print_links_to_console(inputs["region"], analyzation_list)
+    print_header1("Analysis completed. Full Network Path Found: " + str(analysis_result["full_network_path_found"]))
+    write_to_disk(analysis_result)
+    print_links_to_console(inputs["region"], analysis_result)
