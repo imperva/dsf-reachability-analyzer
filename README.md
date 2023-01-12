@@ -19,31 +19,14 @@
     <p>
     [See minimum Policy needed](https://github.com/imperva/dsf-reachability-analyzer/blob/master/iam_role.yml)
     </p>
-   <h2>Functions</h2>
-   <h3><code>init_client(region)</code></h3>
-   <ul>
-      <li>Creates a session with the specified AWS access key and secret key and returns an EC2 client.</li>
-   </ul>
-   <h3><code>create_network_insights_path(source, destination,port)</code></h3>
-   <ul>
-      <li>Creates a network insights path between the source and destination subnets, on the specified protocol and port. Returns the NetworkInsightsPathId.</li>
-   </ul>
-   <h3><code>start_network_insights_analysis(network_insights_path_id)</code></h3>
-   <ul>
-      <li>Starts the network insights analysis on the path specified by network_insights_path_id. Returns the NetworkInsightsAnalysisId.</li>
-   </ul>
-   <h3><code>fetch_network_insights_analyses_result(analysis_id)</code></h3>
-   <ul>
-      <li>Fetches the results of the network insights analysis and returns the status and whether a path was found.</li>
-   </ul>
-   <h3><code>get_inputs()</code></h3>
-   <ul>
-      <li>Prompts the user for the region, source and destination subnet IDs, and ports to analyze connectivity on.</li>
-   </ul>
-   <h3><code>analyze(subnet1_eni, subnet2_eni, analyze_specific_ports_list)</code></h3>
-   <ul>
-      <li>Function that performs the analysis on specified ports and prints out the result.</li>
-   </ul>
+    <h2>Results</h2>
+   <p>On Analysis completion the results can be viewd in 3 places:
+   <ol>
+      <li>On the terminal you will be ablr to see the basic info</li>
+       <li>A file will be generated tom include all the analysis including detail info</li>
+       <li>On the terminal you will see direct links to AWS Network Analyzer service. The links will bring you directly to the specific analysis. Note that you need to be logged in to the correspondant AWS account</li>
+   </ol>
+   </p>
    <h2>Additional note</h2>
    <p>It is recommended to use environment variable to manage the aws key and secret key or better using IAM to grant access to your AWS resource, instead of hardcoding them in the script</p>
 </div>
