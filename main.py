@@ -38,6 +38,34 @@ def create_network_insights_path(source, destination,port):
     
     return response_create['NetworkInsightsPath']
 
+def delete_all_network_insights_path():
+    response = client.describe_network_insights_paths()
+    paths = response['NetworkInsightsPaths']
+    delete_network_insights_path(paths)
+
+def delete_network_insights_path(paths):
+    for path in paths:
+        path_id = path['NetworkInsightsPathId']
+        delete_single_network_insights_path(path_id)
+
+def delete_single_network_insights_path(path_id):
+        client.delete_network_insights_path(NetworkInsightsPathId=path_id)
+        print(f'Deleted network insights path: {path_id}')
+
+def delete_all_network_insights_analysis_and_paths():
+    response = client.describe_network_insights_paths()
+    paths = response['NetworkInsightsPaths']
+    delete_network_insights_analysis(paths)
+   
+
+def delete_network_insights_analysis(paths):
+    for path in paths:
+        path_id = path['NetworkInsightsPathId']
+        response_analysis = client.describe_network_insights_analyses(NetworkInsightsPathId=path_id)
+        for analisy in response_analysis['NetworkInsightsAnalyses']:
+            response = client.delete_network_insights_analysis(NetworkInsightsAnalysisId=analisy['NetworkInsightsAnalysisId'])           
+        delete_single_network_insights_path(path_id)
+
 def start_network_insights_analysis(network_insights_path_id):
     response_start = client.start_network_insights_analysis(
         NetworkInsightsPathId=network_insights_path_id
@@ -77,8 +105,8 @@ def get_inputs():
     region = input("Please enter the AWS Region: ")
     access_key = input("Please enter the AWS Access Key: ")
     secret_key = input("Please enter the AWS Secrete Key: ")
-    subnet1 = input("Please enter the source Subnet ID - Subnet1: ") 
-    subnet2 = input("Please enter the destination Subnet ID - Subnet2: ") 
+    # subnet1 = input("Please enter the source Subnet ID - Subnet1: ")
+    # subnet2 = input("Please enter the destination Subnet ID - Subnet2: ")
     # analyze_bi_direction = input("Analizy bi-direction (y/n):")
     analyze_specific_ports = input("Analizy specific ports (list comma delimited): ")
     default_ports = "22,8080,8443,3030,27117"
@@ -88,8 +116,8 @@ def get_inputs():
     analyze_specific_ports_list = list(analyze_specific_ports.split(","))
 
     return {
-        "subnet1" : subnet1,
-        "subnet2" : subnet2,
+        # "subnet1" : subnet1,
+        # "subnet2" : subnet2,
         "analyze_specific_ports_list" : analyze_specific_ports_list,
         "region" : region,
         "access_key" : access_key,
@@ -132,6 +160,32 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analysis_result, port):
         }
     analysis_result["path_info"].append(path_result)
     print_header2("Analysis on port: " + str(port) + " completed")
+
+
+# def create_eni(subnetId, securityGroupId=None):
+#     prints("Creating eni in Subnet: " + subnetId)
+#     response = client.create_network_interface(
+#         Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
+#         SubnetId = subnetId, 
+#         SecurityGroupIds=[securityGroupId] if securityGroupId else None,
+#         TagSpecifications=[
+#             {
+#                 'ResourceType': 'network-interface',
+#                 'Tags': [
+#                     {
+#                         'Key': 'project',
+#                         'Value': 'dsf'
+#                     }
+#                 ]
+#             }])
+#     eniId = response["NetworkInterface"]["NetworkInterfaceId"]
+#     if securityGroupId:
+#         current_sg = client.describe_network_interfaces(NetworkInterfaceIds=[eniId])['NetworkInterfaces'][0]['Groups'][0]['GroupId']
+#         if current_sg != securityGroupId:
+#             client.modify_network_interface_attribute(NetworkInterfaceId=eniId, Groups=[securityGroupId])
+#             prints("Security group modified to " + securityGroupId)
+#     prints("eni created: " + eniId)
+#     return eniId
 
 def create_eni(subnetId):
     prints("Creating eni in Subnet: " + subnetId)
@@ -204,7 +258,6 @@ def print_links_to_console(region, analysis_result):
 
 def load_plan():
 
-
     # Open the JSON file
     with open("plan.json", "r") as json_file:
         data = json.load(json_file)
@@ -232,7 +285,7 @@ def load_plan():
                     combinations.append({"source": other_hub["subnet"], "destination": hub["subnet"]})
                     
         # Iterate over the gws list
-        for gw in data["gws"]:
+        for gw in data["gw"]:
             # Check if the hub and gw have the same deploymentid
             if hub["deploymentid"] == gw["deploymentid"]:
                 # Create a tuple of the subnets to use as a key in the set
@@ -243,21 +296,37 @@ def load_plan():
                     combination_set.add(subnet_tuple)
                     # Add the combination of subnets to the list, with the hub as "source" and gw as "destination"
                     combinations.append({"source": hub["subnet"], "destination": gw["subnet"]})
+                
+    for gw in data["gw"]:
+         for other_gw in data["gw"]:
+            if gw["keypairid"] == other_gw["keypairid"] and gw["id"] != other_gw["id"]:
+                subnet_tuple = (gw["subnet"], other_gw["subnet"])
+                subnet_tuple2 = (other_gw["subnet"], gw["subnet"])
+                if subnet_tuple not in combination_set and subnet_tuple2 not in combination_set:
+                   combination_set.add(subnet_tuple)
+                   combination_set.add(subnet_tuple2)
+                   combinations.append({"source": gw["subnet"], "destination": other_gw["subnet"]})
+                   combinations.append({"source": other_gw["subnet"], "destination": gw["subnet"]})
 
     print(combinations)
+    return combinations
 
 if __name__ == '__main__':
+   
     print_header1("eDSF Sonar Network Analyzer Tool")
     inputs = get_inputs()
+    plan = load_plan()
     client = init_client(inputs["access_key"], inputs["secret_key"], inputs["region"])
+    delete_all_network_insights_analysis_and_paths()
     print_header2("Analysis Started")
-    endpoints = create_network_endpoints(inputs["subnet1"],inputs["subnet2"])
-    analysis_result = analyze(
-        endpoints["subnet1_eni"],
-        endpoints["subnet2_eni"],
-        inputs["analyze_specific_ports_list"])
+    for p in plan:
+        endpoints = create_network_endpoints(p["source"],p["destination"])
+        analysis_result = analyze(
+            endpoints["subnet1_eni"],
+            endpoints["subnet2_eni"],
+            inputs["analyze_specific_ports_list"])
 
-    delete_network_endpoints(endpoints["subnet1_eni"],endpoints["subnet2_eni"])
-    print_header1("Analysis completed. Full Network Path Found: " + str(analysis_result["full_network_path_found"]))
-    write_to_disk(analysis_result)
-    print_links_to_console(inputs["region"], analysis_result)
+        delete_network_endpoints(endpoints["subnet1_eni"],endpoints["subnet2_eni"])
+        print_header1("Analysis completed. Full Network Path Found: " + str(analysis_result["full_network_path_found"]))
+        write_to_disk(analysis_result)
+        print_links_to_console(inputs["region"], analysis_result)

@@ -4,33 +4,29 @@
             "id": "hub-123",
             "deploymentid" : "dep-098",
             "keypairid":"kp-567",
-            "subnet": "1.1.1.1",
+            "subnet": "subnet-0bf4929b29abd7028",
+            "securitygroupid":"",
             "type": "PRIMARY"
-        },
-        {
-            "id": "hub-321",
-            "deploymentid" : "dep-098",
-            "keypairid":"kp-567",
-            "subnet": "2.2.2.2",
-            "TYPE": "SECONDARY"
         }
     ],
-    "gws": [
+    "gw": [
         {
             "id": "gw-zaq",
             "deploymentid" : "dep-098",
             "clusterid" : "cl-123",
             "keypairid":"kp-666",
-            "subnet": "3.3.3.3",
+            "subnet": "subnet-02d6b746e7171f433",
+            "securitygroupid":"",
             "type": "PRIMARY"
-        }, 
+        },
         {
-            "id": "gw-juy",
+            "id": "gw-zaq2",
             "deploymentid" : "dep-098",
             "clusterid" : "cl-123",
             "keypairid":"kp-666",
-            "subnet": "4.4.4.4",
-            "type": "PRIMARY"
+            "subnet": "subnet-01c731e5e49c6ea72",
+            "securitygroupid":"",
+            "type": "SECONDARY"
         }
         ]
 
