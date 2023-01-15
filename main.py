@@ -292,13 +292,7 @@ def load_plan():
     return combinations
 
 
-if __name__ == '__main__':
-    print_header1("eDSF Sonar Network Analyzer Tool")
-    inputs = get_inputs()
-    plan = load_plan()
-    client = init_client(inputs["access_key"], inputs["secret_key"], inputs["region"])
-    delete_all_network_insights_analysis_and_paths()
-    print_header2("Analysis Started")
+def execute_plan(plan):
     for path in plan:
         source_subnet_id = path["source"]["subnet"]
         source_sg = path["source"]["securitygroupid"]
@@ -316,6 +310,14 @@ if __name__ == '__main__':
         write_to_disk(analysis_result)
         print_links_to_console(inputs["region"], analysis_result)
 
+if __name__ == '__main__':
+    print_header1("eDSF Sonar Network Analyzer Tool")
+    inputs = get_inputs()
+    plan = load_plan()
+    client = init_client(inputs["access_key"], inputs["secret_key"], inputs["region"])
+    delete_all_network_insights_analysis_and_paths()
+    print_header2("Analysis Started")
+    execute_plan(plan)
 
 
 # def create_eni(subnetId):
