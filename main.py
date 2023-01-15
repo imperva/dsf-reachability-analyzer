@@ -125,9 +125,9 @@ def get_inputs():
     }
 
 
-def analyze(subnet1_eni, subnet2_eni, analyze_specific_ports_list):
+def analyze(path, analyze_specific_ports_list):
 
-    prints("Start analysis network connectivity of Subnet1 via: " + subnet1_eni + " --> to Subnet2 via " + subnet2_eni + ", on ports: " + str(analyze_specific_ports_list))
+    prints("Start analysis network connectivity of Subnet1 via: " + path["source"]["subnet"] + " --> to Subnet2 via " + path["destination"]["subnet"] + ", on ports: " + str(analyze_specific_ports_list))
 
     analysis_result = {
         "full_network_path_found" : True,
@@ -135,7 +135,7 @@ def analyze(subnet1_eni, subnet2_eni, analyze_specific_ports_list):
     }
     
     for port in analyze_specific_ports_list:
-        analyze_per_port(subnet1_eni, subnet2_eni, analysis_result, port)
+        analyze_per_port(path["source"]["subnet"], path["destination"]["subnet"], analysis_result, port)
     return analysis_result
 
 def analyze_per_port(subnet1_eni, subnet2_eni, analysis_result, port):
@@ -317,18 +317,19 @@ if __name__ == '__main__':
     client = init_client(inputs["access_key"], inputs["secret_key"], inputs["region"])
     delete_all_network_insights_analysis_and_paths()
     print_header2("Analysis Started")
-    for p in plan:
-        source_subnet_id = p["source"]["subnet"]
-        source_sg = p["source"]["securitygroupid"]
-        destination_subnet_id = p["destination"]["subnet"]
-        destination_sg = p["destination"]["securitygroupid"]
-        endpoints = create_network_endpoints(source_subnet_id, source_sg,destination_subnet_id,destination_sg)
-        analysis_result = analyze(
-            endpoints["subnet1_eni"],
-            endpoints["subnet2_eni"],
-            inputs["analyze_specific_ports_list"])
+    for path in plan:
+        source_subnet_id = path["source"]["subnet"]
+        source_sg = path["source"]["securitygroupid"]
+        destination_subnet_id = path["destination"]["subnet"]
+        destination_sg = path["destination"]["securitygroupid"]
 
-        delete_network_endpoints(endpoints["subnet1_eni"],endpoints["subnet2_eni"])
+        endpoints = create_network_endpoints(source_subnet_id, source_sg,destination_subnet_id,destination_sg)
+        path["source"]["subnet"] = endpoints["subnet1_eni"]
+        path["destination"]["subnet"] = endpoints["subnet2_eni"]
+
+        analysis_result = analyze(path,inputs["analyze_specific_ports_list"])
+
+        delete_network_endpoints(path["source"]["subnet"],path["destination"]["subnet"])
         print_header1("Analysis completed. Full Network Path Found: " + str(analysis_result["full_network_path_found"]))
         write_to_disk(analysis_result)
         print_links_to_console(inputs["region"], analysis_result)

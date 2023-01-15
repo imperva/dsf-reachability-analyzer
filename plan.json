@@ -1,28 +1,24 @@
 {
     "hub" : [
        { 
-            "id": "hub-123",
+            "friendlyname": "hub-123",
             "hapairid":"kp-567",
             "subnet": "subnet-0bf4929b29abd7028",
-            "securitygroupid":"sg-06522f6f11b71ac31",
-            "type": "PRIMARY"
+            "securitygroupid":"sg-06522f6f11b71ac31"
         }
     ],
     "gw": [
         {
-            "id": "gw-zaq",
+            "friendlyname": "gw-zaq",
             "hapairid":"kp-666",
             "subnet": "subnet-02d6b746e7171f433",
-            "securitygroupid":"sg-06522f6f11b71ac31",
-            "type": "PRIMARY"
+            "securitygroupid":"sg-06522f6f11b71ac31"
         },
         {
-            "id": "gw-zaq2",
+            "friendlyname": "gw-zaq2",
             "hapairid":"kp-666",
             "subnet": "subnet-01c731e5e49c6ea72",
-            "securitygroupid":"sg-0219e23a249240749",
-            "type": "SECONDARY"
+            "securitygroupid":"sg-0219e23a249240749"
         }
-        ]
-
+    ]
 }
