@@ -135,7 +135,7 @@ def analyze(path, analyze_specific_ports_list):
     }
     
     for port in analyze_specific_ports_list:
-        analyze_per_port(path["source"]["subnet"], path["destination"]["subnet"], analysis_result, port)
+        analyze_per_port(path["source"]["eni"], path["destination"]["eni"], analysis_result, port)
     return analysis_result
 
 def analyze_per_port(subnet1_eni, subnet2_eni, analysis_result, port):
@@ -186,25 +186,6 @@ def create_eni(subnetId, securityGroupId=None):
             prints("Security group modified to " + securityGroupId)
     prints("eni created: " + eniId)
     return eniId
-
-# def create_eni(subnetId):
-#     prints("Creating eni in Subnet: " + subnetId)
-#     response = client.create_network_interface(
-#         Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
-#         SubnetId = subnetId, 
-#         TagSpecifications=[
-#             {
-#                 'ResourceType': 'network-interface',
-#                 'Tags': [
-#                     {
-#                         'Key': 'project',
-#                         'Value': 'dsf'
-#                     }
-#                 ]
-#             }])
-#     eniId = response["NetworkInterface"]["NetworkInterfaceId"]
-#     prints("eni created: " + eniId)
-#     return eniId
 
 def delete_eni(eni_id):
     prints("Deleting eni: " + eni_id)
@@ -270,7 +251,7 @@ def load_plan():
     for hub in data["hub"]:
         # Iterate over the hub list again to find other hubs with the same hapairid
         for other_hub in data["hub"]:
-            if hub["hapairid"] == other_hub["hapairid"] and hub["id"] != other_hub["id"]:
+            if hub["hapairid"] == other_hub["hapairid"] and hub["friendlyname"] != other_hub["friendlyname"]:
                 # Create a tuple of the subnets to use as a key in the set
                 subnet_tuple = (hub["subnet"], other_hub["subnet"])
                 subnet_tuple2 = (other_hub["subnet"], hub["subnet"])
@@ -297,7 +278,7 @@ def load_plan():
                 
     for gw in data["gw"]:
          for other_gw in data["gw"]:
-            if gw["hapairid"] == other_gw["hapairid"] and gw["id"] != other_gw["id"]:
+            if gw["hapairid"] == other_gw["hapairid"] and gw["friendlyname"] != other_gw["friendlyname"]:
                 subnet_tuple = (gw["subnet"], other_gw["subnet"])
                 subnet_tuple2 = (other_gw["subnet"], gw["subnet"])
                 if subnet_tuple not in combination_set and subnet_tuple2 not in combination_set:
@@ -309,6 +290,7 @@ def load_plan():
     print_header1("Plan:")
     prints(json.dumps(combinations, indent=4, sort_keys=True, default=str))
     return combinations
+
 
 if __name__ == '__main__':
     print_header1("eDSF Sonar Network Analyzer Tool")
@@ -324,12 +306,33 @@ if __name__ == '__main__':
         destination_sg = path["destination"]["securitygroupid"]
 
         endpoints = create_network_endpoints(source_subnet_id, source_sg,destination_subnet_id,destination_sg)
-        path["source"]["subnet"] = endpoints["subnet1_eni"]
-        path["destination"]["subnet"] = endpoints["subnet2_eni"]
+        path["source"]["eni"] = endpoints["subnet1_eni"]
+        path["destination"]["eni"] = endpoints["subnet2_eni"]
 
         analysis_result = analyze(path,inputs["analyze_specific_ports_list"])
 
-        delete_network_endpoints(path["source"]["subnet"],path["destination"]["subnet"])
+        delete_network_endpoints(path["source"]["eni"],path["destination"]["eni"])
         print_header1("Analysis completed. Full Network Path Found: " + str(analysis_result["full_network_path_found"]))
         write_to_disk(analysis_result)
         print_links_to_console(inputs["region"], analysis_result)
+
+
+
+# def create_eni(subnetId):
+#     prints("Creating eni in Subnet: " + subnetId)
+#     response = client.create_network_interface(
+#         Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
+#         SubnetId = subnetId, 
+#         TagSpecifications=[
+#             {
+#                 'ResourceType': 'network-interface',
+#                 'Tags': [
+#                     {
+#                         'Key': 'project',
+#                         'Value': 'dsf'
+#                     }
+#                 ]
+#             }])
+#     eniId = response["NetworkInterface"]["NetworkInterfaceId"]
+#     prints("eni created: " + eniId)
+#     return eniId
