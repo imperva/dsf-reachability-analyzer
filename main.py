@@ -35,7 +35,6 @@ def create_network_insights_path(source, destination,port):
     network_insights_path_id = response_create['NetworkInsightsPath']['NetworkInsightsPathId']
     prints("Network Insight Path Created. NetworkInsightsPathId: " + network_insights_path_id)
 
-    
     return response_create['NetworkInsightsPath']
 
 def delete_all_network_insights_path():
@@ -99,15 +98,10 @@ def fetch_network_insights_analyses_result(analysis_id):
         "info" : full_info
     } 
 
-
-
 def get_inputs():
     region = input("Please enter the AWS Region: ")
     access_key = input("Please enter the AWS Access Key: ")
     secret_key = input("Please enter the AWS Secrete Key: ")
-    # subnet1 = input("Please enter the source Subnet ID - Subnet1: ")
-    # subnet2 = input("Please enter the destination Subnet ID - Subnet2: ")
-    # analyze_bi_direction = input("Analizy bi-direction (y/n):")
     analyze_specific_ports = input("Analizy specific ports (list comma delimited): ")
     default_ports = "22,8080,8443,3030,27117"
     if analyze_specific_ports == '':
@@ -221,7 +215,12 @@ def prints(text):
     print(text)
 
 
-def write_to_disk(analysis_result):
+def read_plan():
+    with open("plan.json", "r") as json_file:
+        data = json.load(json_file)
+    return data
+
+def write_analysis_to_disk(analysis_result):
     file_name=str(int(time.time())) + "-" + str(analysis_result["full_network_path_found"]) + ".json"
     text_file = open(file_name, "w")
     n = text_file.write(json.dumps(analysis_result, indent=4, sort_keys=True, default=str))
@@ -235,14 +234,7 @@ def print_links_to_console(region, analysis_result):
         prints("   - For '" +  path_info["insights_path_id"] + "' https://" + region + ".console.aws.amazon.com/vpc/home?region=" + region + "#NetworkPath:pathId=" + path_info["insights_path_id"])
 
 
-
-
-def load_plan():
-
-    # Open the JSON file
-    with open("plan.json", "r") as json_file:
-        data = json.load(json_file)
-
+def parse_plan(data):
     # Create empty list and set to store the combinations
     combinations = []
     combination_set = set()
@@ -252,24 +244,19 @@ def load_plan():
         # Iterate over the hub list again to find other hubs with the same hapairid
         for other_hub in data["hub"]:
             if hub["hapairid"] == other_hub["hapairid"] and hub["friendlyname"] != other_hub["friendlyname"]:
-                # Create a tuple of the subnets to use as a key in the set
                 subnet_tuple = (hub["subnet"], other_hub["subnet"])
                 subnet_tuple2 = (other_hub["subnet"], hub["subnet"])
-                # Check if the combination is already in the set
+
                 if subnet_tuple not in combination_set and subnet_tuple2 not in combination_set:
-                    # Add the combination to the set
                     combination_set.add(subnet_tuple)
                     combination_set.add(subnet_tuple2)
-                    # Add the combination of subnets to the list, with the first as "source" and second as "destination"
+                
                     combinations.append({"source": hub, "destination": other_hub})
-                    # Add the combination of subnets to the list, with the second as "source" and first as "destination"
                     combinations.append({"source": other_hub, "destination": hub})
                     
         # Iterate over the gws list
         for gw in data["gw"]:
-            # Create a tuple of the subnets to use as a key in the set
             subnet_tuple = (hub["subnet"], gw["subnet"])
-            # Check if the combination is already in the set
             if subnet_tuple not in combination_set:
                 # Add the combination to the set
                 combination_set.add(subnet_tuple)
@@ -286,37 +273,47 @@ def load_plan():
                    combination_set.add(subnet_tuple2)
                    combinations.append({"source": gw, "destination": other_gw})
                    combinations.append({"source": other_gw, "destination": gw})
-
-    print_header1("Plan:")
-    prints(json.dumps(combinations, indent=4, sort_keys=True, default=str))
     return combinations
+
+def load_plan():
+    data = read_plan()
+    plan = parse_plan(data)
+    print_header1("Plan:")
+    prints(json.dumps(plan, indent=4, sort_keys=True, default=str))
+    proceed = input("Continue (y/n): ")
+    if proceed != "y":
+        exit(1)
+    return plan
 
 
 def execute_plan(plan):
     for path in plan:
-        source_subnet_id = path["source"]["subnet"]
-        source_sg = path["source"]["securitygroupid"]
-        destination_subnet_id = path["destination"]["subnet"]
-        destination_sg = path["destination"]["securitygroupid"]
+        source = path["source"]
+        destination = path["destination"]
+
+        source_subnet_id = source["subnet"]
+        source_sg = source["securitygroupid"]
+        destination_subnet_id = destination["subnet"]
+        destination_sg = destination["securitygroupid"]
 
         endpoints = create_network_endpoints(source_subnet_id, source_sg,destination_subnet_id,destination_sg)
-        path["source"]["eni"] = endpoints["subnet1_eni"]
-        path["destination"]["eni"] = endpoints["subnet2_eni"]
+        source["eni"] = endpoints["subnet1_eni"]
+        destination["eni"] = endpoints["subnet2_eni"]
 
         analysis_result = analyze(path,inputs["analyze_specific_ports_list"])
 
-        delete_network_endpoints(path["source"]["eni"],path["destination"]["eni"])
+        delete_network_endpoints(source["eni"],destination["eni"])
         print_header1("Analysis completed. Full Network Path Found: " + str(analysis_result["full_network_path_found"]))
-        write_to_disk(analysis_result)
+        write_analysis_to_disk(analysis_result)
         print_links_to_console(inputs["region"], analysis_result)
 
 if __name__ == '__main__':
     print_header1("eDSF Sonar Network Analyzer Tool")
     inputs = get_inputs()
-    plan = load_plan()
     client = init_client(inputs["access_key"], inputs["secret_key"], inputs["region"])
     delete_all_network_insights_analysis_and_paths()
     print_header2("Analysis Started")
+    plan = load_plan()
     execute_plan(plan)
 
 
