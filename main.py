@@ -162,36 +162,12 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analysis_result, port):
     print_header2("Analysis on port: " + str(port) + " completed")
 
 
-# def create_eni(subnetId, securityGroupId=None):
-#     prints("Creating eni in Subnet: " + subnetId)
-#     response = client.create_network_interface(
-#         Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
-#         SubnetId = subnetId, 
-#         SecurityGroupIds=[securityGroupId] if securityGroupId else None,
-#         TagSpecifications=[
-#             {
-#                 'ResourceType': 'network-interface',
-#                 'Tags': [
-#                     {
-#                         'Key': 'project',
-#                         'Value': 'dsf'
-#                     }
-#                 ]
-#             }])
-#     eniId = response["NetworkInterface"]["NetworkInterfaceId"]
-#     if securityGroupId:
-#         current_sg = client.describe_network_interfaces(NetworkInterfaceIds=[eniId])['NetworkInterfaces'][0]['Groups'][0]['GroupId']
-#         if current_sg != securityGroupId:
-#             client.modify_network_interface_attribute(NetworkInterfaceId=eniId, Groups=[securityGroupId])
-#             prints("Security group modified to " + securityGroupId)
-#     prints("eni created: " + eniId)
-#     return eniId
-
-def create_eni(subnetId):
+def create_eni(subnetId, securityGroupId=None):
     prints("Creating eni in Subnet: " + subnetId)
     response = client.create_network_interface(
         Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
         SubnetId = subnetId, 
+        Groups=[securityGroupId] if securityGroupId else None,
         TagSpecifications=[
             {
                 'ResourceType': 'network-interface',
@@ -203,17 +179,41 @@ def create_eni(subnetId):
                 ]
             }])
     eniId = response["NetworkInterface"]["NetworkInterfaceId"]
+    if securityGroupId:
+        current_sg = client.describe_network_interfaces(NetworkInterfaceIds=[eniId])['NetworkInterfaces'][0]['Groups'][0]['GroupId']
+        if current_sg != securityGroupId:
+            client.modify_network_interface_attribute(NetworkInterfaceId=eniId, Groups=[securityGroupId])
+            prints("Security group modified to " + securityGroupId)
     prints("eni created: " + eniId)
     return eniId
+
+# def create_eni(subnetId):
+#     prints("Creating eni in Subnet: " + subnetId)
+#     response = client.create_network_interface(
+#         Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
+#         SubnetId = subnetId, 
+#         TagSpecifications=[
+#             {
+#                 'ResourceType': 'network-interface',
+#                 'Tags': [
+#                     {
+#                         'Key': 'project',
+#                         'Value': 'dsf'
+#                     }
+#                 ]
+#             }])
+#     eniId = response["NetworkInterface"]["NetworkInterfaceId"]
+#     prints("eni created: " + eniId)
+#     return eniId
 
 def delete_eni(eni_id):
     prints("Deleting eni: " + eni_id)
     response = client.delete_network_interface(NetworkInterfaceId=eni_id)
 
-def create_network_endpoints(subnet1,subnet2):
+def create_network_endpoints(subnet1,sg1,subnet2,sg2):
     prints("Start creating Networking Endpoints")
-    subnet1_eni = create_eni(subnet1)
-    subnet2_eni = create_eni(subnet2)
+    subnet1_eni = create_eni(subnet1,sg1)
+    subnet2_eni = create_eni(subnet2,sg2)
     return {
         "subnet1_eni" : subnet1_eni,
         "subnet2_eni" : subnet2_eni
@@ -241,7 +241,7 @@ def prints(text):
 
 
 def write_to_disk(analysis_result):
-    file_name=str(int(time.time())) + ".json"
+    file_name=str(int(time.time())) + "-" + str(analysis_result["full_network_path_found"]) + ".json"
     text_file = open(file_name, "w")
     n = text_file.write(json.dumps(analysis_result, indent=4, sort_keys=True, default=str))
     text_file.close()
@@ -268,9 +268,9 @@ def load_plan():
 
     # Iterate over the hub list
     for hub in data["hub"]:
-        # Iterate over the hub list again to find other hubs with the same keypairid
+        # Iterate over the hub list again to find other hubs with the same hapairid
         for other_hub in data["hub"]:
-            if hub["keypairid"] == other_hub["keypairid"] and hub["id"] != other_hub["id"]:
+            if hub["hapairid"] == other_hub["hapairid"] and hub["id"] != other_hub["id"]:
                 # Create a tuple of the subnets to use as a key in the set
                 subnet_tuple = (hub["subnet"], other_hub["subnet"])
                 subnet_tuple2 = (other_hub["subnet"], hub["subnet"])
@@ -280,39 +280,37 @@ def load_plan():
                     combination_set.add(subnet_tuple)
                     combination_set.add(subnet_tuple2)
                     # Add the combination of subnets to the list, with the first as "source" and second as "destination"
-                    combinations.append({"source": hub["subnet"], "destination": other_hub["subnet"]})
+                    combinations.append({"source": hub, "destination": other_hub})
                     # Add the combination of subnets to the list, with the second as "source" and first as "destination"
-                    combinations.append({"source": other_hub["subnet"], "destination": hub["subnet"]})
+                    combinations.append({"source": other_hub, "destination": hub})
                     
         # Iterate over the gws list
         for gw in data["gw"]:
-            # Check if the hub and gw have the same deploymentid
-            if hub["deploymentid"] == gw["deploymentid"]:
-                # Create a tuple of the subnets to use as a key in the set
-                subnet_tuple = (hub["subnet"], gw["subnet"])
-                # Check if the combination is already in the set
-                if subnet_tuple not in combination_set:
-                    # Add the combination to the set
-                    combination_set.add(subnet_tuple)
-                    # Add the combination of subnets to the list, with the hub as "source" and gw as "destination"
-                    combinations.append({"source": hub["subnet"], "destination": gw["subnet"]})
+            # Create a tuple of the subnets to use as a key in the set
+            subnet_tuple = (hub["subnet"], gw["subnet"])
+            # Check if the combination is already in the set
+            if subnet_tuple not in combination_set:
+                # Add the combination to the set
+                combination_set.add(subnet_tuple)
+                # Add the combination of subnets to the list, with the hub as "source" and gw as "destination"
+                combinations.append({"source": hub, "destination": gw})
                 
     for gw in data["gw"]:
          for other_gw in data["gw"]:
-            if gw["keypairid"] == other_gw["keypairid"] and gw["id"] != other_gw["id"]:
+            if gw["hapairid"] == other_gw["hapairid"] and gw["id"] != other_gw["id"]:
                 subnet_tuple = (gw["subnet"], other_gw["subnet"])
                 subnet_tuple2 = (other_gw["subnet"], gw["subnet"])
                 if subnet_tuple not in combination_set and subnet_tuple2 not in combination_set:
                    combination_set.add(subnet_tuple)
                    combination_set.add(subnet_tuple2)
-                   combinations.append({"source": gw["subnet"], "destination": other_gw["subnet"]})
-                   combinations.append({"source": other_gw["subnet"], "destination": gw["subnet"]})
+                   combinations.append({"source": gw, "destination": other_gw})
+                   combinations.append({"source": other_gw, "destination": gw})
 
-    print(combinations)
+    print_header1("Plan:")
+    prints(json.dumps(combinations, indent=4, sort_keys=True, default=str))
     return combinations
 
 if __name__ == '__main__':
-   
     print_header1("eDSF Sonar Network Analyzer Tool")
     inputs = get_inputs()
     plan = load_plan()
@@ -320,7 +318,11 @@ if __name__ == '__main__':
     delete_all_network_insights_analysis_and_paths()
     print_header2("Analysis Started")
     for p in plan:
-        endpoints = create_network_endpoints(p["source"],p["destination"])
+        source_subnet_id = p["source"]["subnet"]
+        source_sg = p["source"]["securitygroupid"]
+        destination_subnet_id = p["destination"]["subnet"]
+        destination_sg = p["destination"]["securitygroupid"]
+        endpoints = create_network_endpoints(source_subnet_id, source_sg,destination_subnet_id,destination_sg)
         analysis_result = analyze(
             endpoints["subnet1_eni"],
             endpoints["subnet2_eni"],
