@@ -1,7 +1,6 @@
 import boto3
 import time
 import json
-from itertools import combinations
 
 def init_client(access_key,secret_key,region):
     # Create a session with the specified AWS access key and secret key
@@ -10,10 +9,8 @@ def init_client(access_key,secret_key,region):
         aws_secret_access_key=secret_key,
         region_name=region
     )
-
     client = session.client('ec2')
     return client
-
 
 def create_network_insights_path(source, destination,port):
     response_create = client.create_network_insights_path(
@@ -56,20 +53,16 @@ def delete_all_network_insights_analysis_and_paths():
     paths = response['NetworkInsightsPaths']
     delete_network_insights_analysis(paths)
    
-
 def delete_network_insights_analysis(paths):
     for path in paths:
         path_id = path['NetworkInsightsPathId']
         response_analysis = client.describe_network_insights_analyses(NetworkInsightsPathId=path_id)
         for analisy in response_analysis['NetworkInsightsAnalyses']:
-            response = client.delete_network_insights_analysis(NetworkInsightsAnalysisId=analisy['NetworkInsightsAnalysisId'])           
+            client.delete_network_insights_analysis(NetworkInsightsAnalysisId=analisy['NetworkInsightsAnalysisId'])           
         delete_single_network_insights_path(path_id)
 
 def start_network_insights_analysis(network_insights_path_id):
-    response_start = client.start_network_insights_analysis(
-        NetworkInsightsPathId=network_insights_path_id
-    )
-
+    response_start = client.start_network_insights_analysis(NetworkInsightsPathId=network_insights_path_id)
     analysis_id = response_start['NetworkInsightsAnalysis']['NetworkInsightsAnalysisId']
     prints("Network Analisys Started. NetworkInsightsAnalysisId: " + analysis_id)
 
@@ -110,8 +103,6 @@ def get_inputs():
     analyze_specific_ports_list = list(analyze_specific_ports.split(","))
 
     return {
-        # "subnet1" : subnet1,
-        # "subnet2" : subnet2,
         "analyze_specific_ports_list" : analyze_specific_ports_list,
         "region" : region,
         "access_key" : access_key,
@@ -120,14 +111,11 @@ def get_inputs():
 
 
 def analyze(path, analyze_specific_ports_list):
-
     prints("Start analysis network connectivity of Subnet1 via: " + path["source"]["subnet"] + " --> to Subnet2 via " + path["destination"]["subnet"] + ", on ports: " + str(analyze_specific_ports_list))
-
     analysis_result = {
         "full_network_path_found" : True,
         "path_info" : []  
     }
-    
     for port in analyze_specific_ports_list:
         analyze_per_port(path["source"]["eni"], path["destination"]["eni"], analysis_result, port)
     return analysis_result
@@ -315,23 +303,3 @@ if __name__ == '__main__':
     print_header2("Analysis Started")
     plan = load_plan()
     execute_plan(plan)
-
-
-# def create_eni(subnetId):
-#     prints("Creating eni in Subnet: " + subnetId)
-#     response = client.create_network_interface(
-#         Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
-#         SubnetId = subnetId, 
-#         TagSpecifications=[
-#             {
-#                 'ResourceType': 'network-interface',
-#                 'Tags': [
-#                     {
-#                         'Key': 'project',
-#                         'Value': 'dsf'
-#                     }
-#                 ]
-#             }])
-#     eniId = response["NetworkInterface"]["NetworkInterfaceId"]
-#     prints("eni created: " + eniId)
-#     return eniId
