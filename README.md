@@ -22,8 +22,8 @@
     <h2>Results</h2>
    <p>On Analysis completion the results can be viewd in 3 places:
    <ol>
-      <li>On the terminal you will be ablr to see the basic info</li>
-       <li>A file will be generated tom include all the analysis including detail info</li>
+      <li>On the terminal you will be able to see the basic info</li>
+       <li>A file will be generated to include all the analysis including detail info</li>
        <li>On the terminal you will see direct links to AWS Network Analyzer service. The links will bring you directly to the specific analysis. Note that you need to be logged in to the correspondant AWS account</li>
    </ol>
    </p>
