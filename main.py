@@ -122,7 +122,9 @@ def analyze(path, analyze_specific_ports_list):
     prints("Start analysis network connectivity of Subnet1 via: " + path["source"]["subnet"] + " --> to Subnet2 via " + path["destination"]["subnet"] + ", on ports: " + str(analyze_specific_ports_list))
     analysis_result = {
         "full_network_path_found" : True,
-        "path_info" : []  
+        "path_info" : [],
+        "total_network_path_count": len(analyze_specific_ports_list),
+        "valid_network_path_count": 0
     }
     for port in analyze_specific_ports_list:
         analyze_per_port(path["source"]["eni"], path["destination"]["eni"], analysis_result, port)
@@ -138,6 +140,8 @@ def analyze_per_port(subnet1_eni, subnet2_eni, analysis_result, port):
     
     if analysis_result["full_network_path_found"] != False:
         analysis_result["full_network_path_found"] = fetch_network_insights_analyses_result_response["network_path_found"]
+
+    analysis_result["valid_network_path_count"] = analysis_result["valid_network_path_count"] + 1 if fetch_network_insights_analyses_result_response["network_path_found"] else analysis_result["valid_network_path_count"]
 
     path_result = {
             "network_path_found" : fetch_network_insights_analyses_result_response["network_path_found"],
@@ -299,7 +303,7 @@ def execute_plan(plan):
         analysis_result = analyze(path,inputs["analyze_specific_ports_list"])
 
         delete_network_endpoints(source["eni"],destination["eni"])
-        print_header1("Analysis completed. Full Network Path Found: " + str(analysis_result["full_network_path_found"]))
+        print_header1("Analysis completed. " + str(analysis_result["valid_network_path_count"]) + " valid network path found out of " + str(analysis_result["total_network_path_count"]) + " total network path")
         write_analysis_to_disk(analysis_result)
         print_links_to_console(inputs["region"], analysis_result)
 
