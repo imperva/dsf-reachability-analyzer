@@ -1,6 +1,8 @@
 import boto3
 import time
 import json
+import getpass
+import re
 
 def init_client(access_key,secret_key,region):
     # Create a session with the specified AWS access key and secret key
@@ -91,14 +93,20 @@ def fetch_network_insights_analyses_result(analysis_id):
         "info" : full_info
     } 
 
+def get_input(message, error_message, regex, is_secured=False):
+    value = None
+    while not value:
+        value = getpass.getpass(message) if is_secured else input(message)
+        if not value or not re.match(regex, value.strip(), re.IGNORECASE):
+            print(error_message)
+            value = None
+    return value
+
 def get_inputs():
-    region = input("Please enter the AWS Region: ")
-    access_key = input("Please enter the AWS Access Key: ")
-    secret_key = input("Please enter the AWS Secrete Key: ")
-    analyze_specific_ports = input("Analizy specific ports (list comma delimited): ")
-    default_ports = "22,8080,8443,3030,27117"
-    if analyze_specific_ports == '':
-        analyze_specific_ports = default_ports
+    region = get_input("Please enter the AWS Region: ", "You didn't enter anything. Please try again", "^.+$")
+    access_key = get_input("Please enter the AWS Access Key: ", "You didn't enter anything. Please try again", "^.+$")
+    secret_key = get_input("Please enter the AWS Secret Key: ", "You didn't enter anything. Please try again", "^.+$", True)
+    analyze_specific_ports = input("Analyze specific ports [22,8080,8443,3030,27117]: ") or "22,8080,8443,3030,27117"
 
     analyze_specific_ports_list = list(analyze_specific_ports.split(","))
 
@@ -268,8 +276,8 @@ def load_plan():
     plan = parse_plan(data)
     print_header1("Plan:")
     prints(json.dumps(plan, indent=4, sort_keys=True, default=str))
-    proceed = input("Continue (y/n): ")
-    if proceed != "y":
+    proceed = get_input("Do you wish to continue ? (y/n): ", "You didn't type y or n. Please try again", "^(y|n)$")
+    if proceed.lower() != "y":
         exit(1)
     return plan
 
