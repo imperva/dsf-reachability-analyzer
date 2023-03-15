@@ -1,24 +1,24 @@
 {
     "hub" : [
        { 
-            "friendlyname": "hub-123",
-            "hapairid":"kp-567",
-            "subnet": "subnet-0bf4929b29abd7028",
-            "securitygroupid":"sg-06522f6f11b71ac31"
+            "friendly_name": "hub-1",
+            "hadr_pair_id": "hadr-1",
+            "subnet": "subnet-0d02e4eb8dea910d1",
+            "security_group_id": "sg-0dd47b8084fdc4b29",
+            "region": "af-south-1",
+            "peering_connection_id": "pcx-0bcf337458b96e257",
+            "outbound_internet" : {"type":"NAT_GATEWAY", "id": "nat-0a30dd12a56db8c32"}
         }
     ],
     "gw": [
         {
-            "friendlyname": "gw-zaq",
-            "hapairid":"kp-666",
-            "subnet": "subnet-02d6b746e7171f433",
-            "securitygroupid":"sg-06522f6f11b71ac31"
-        },
-        {
-            "friendlyname": "gw-zaq2",
-            "hapairid":"kp-666",
-            "subnet": "subnet-01c731e5e49c6ea72",
-            "securitygroupid":"sg-0219e23a249240749"
+            "friendly_name": "gw-1",
+            "hadr_pair_id": "hadr-2",
+            "subnet": "subnet-06878a4c661c95302",
+            "security_group_id": "sg-0cf150dceb58c9965",
+            "region": "ap-south-1",
+            "peering_connection_id": "pcx-0bcf337458b96e257",
+            "outbound_internet" : {"type":"NAT_GATEWAY", "id": "nat-00cdebb827b00a5f6"}
         }
     ]
 }
