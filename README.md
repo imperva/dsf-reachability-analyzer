@@ -20,6 +20,26 @@
     <p>
     [See minimum Policy needed](https://github.com/imperva/dsf-reachability-analyzer/blob/master/iam_role.yml)
     </p>
+    <h2>plan.json - Network Topology Definition</h2>
+    <p>The plan.json file is used to define the network topology that will be analyzed by the DSF Reachability Analyzer. It contains two main sections: hub and gw, each of which defines a set of network resources
+    </p>
+    <p>
+      Each resource in the hub and gw sections has the following fields:
+    </p>
+    <ul>
+      <li><code>friendly_name</code>: A friendly name for the hub/gateway. This is used for identification purposes only.</li>
+      <li><code>hadr_pair_id</code>: The ID of the High Availability and Disaster Recovery (HADR) pair that this hub/gateway is part of.</li>
+      <li><code>subnet</code>: The ID of the subnet where the hub/gateway is deployed.</li>
+      <li><code>security_group_id</code>: The ID of the security group associated with the hub/gateway.</li>
+      <li><code>region</code>: The AWS region where the hub/gateway is deployed.</li>
+      <li><code>peering_connection_id</code>: The ID of the VPC peering connection that connects the hub/gateway to the target VPC.</li>
+      <li><code>outbound_internet</code>: An object that defines the outbound internet configuration for the hub/gateway. This object contains the following fields:
+          <ul>
+            <li><code>type</code>: The type of outbound internet connection. Can be either "NAT_GATEWAY" or "INTERNET_GATEWAY".</li>
+            <li><code>id</code>: The ID of the NAT or internet gateway to use for outbound traffic.</li>
+          </ul>
+      </li>
+    </ul>
     <h2>Results</h2>
    <p>On Analysis completion the results can be viewd in 3 places:
    <ol>
