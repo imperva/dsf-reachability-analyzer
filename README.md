@@ -9,6 +9,9 @@
    </ul>
    <h2>Usage</h2>
    <ol>
+      <li>Install virtualenv by running the command <code>pip install virtualenv</code>.</li>
+      <li>Create a virtual environment by running the command <code>virtualenv venv</code>.</li>
+      <li>Activate the virtual environment by running the command <code>source venv/bin/activate</code> on Unix-based systems or <code>venv\Scripts\activate.bat</code> on Windows.</li>
       <li>To install the required dependencies, run the following command: <code>pip install -r requirements.txt</code></li>
       <li>Run the script by entering the command <code>python main.py</code> in the command prompt and answer the questions.</li>
       <li>When asked to, enter a list of ports to analyze connectivity on, comma separated (e.g. "22,8080,8443"). If left blank, the script will use a default list of ports (22,8080,8443,3030,27117) which are all the ports needed for a functional Sonar environment.</li>
