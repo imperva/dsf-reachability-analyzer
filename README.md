@@ -28,15 +28,15 @@
     </p>
     <ul>
       <li><code>friendly_name</code>: A friendly name for the hub/gateway. This is used for identification purposes only.</li>
-      <li><code>hadr_pair_id</code>: The ID of the High Availability and Disaster Recovery (HADR) pair that this hub/gateway is part of.</li>
-      <li><code>subnet</code>: The ID of the subnet where the hub/gateway is deployed.</li>
-      <li><code>security_group_id</code>: The ID of the security group associated with the hub/gateway.</li>
-      <li><code>region</code>: The AWS region where the hub/gateway is deployed.</li>
-      <li><code>peering_connection_id</code>: The ID of the VPC peering connection that connects the hub/gateway to the target VPC.</li>
-      <li><code>outbound_internet</code>: An object that defines the outbound internet configuration for the hub/gateway. This object contains the following fields:
+      <li><code>hadr_pair_id</code>: The ID of the High Availability and Disaster Recovery (HADR) pair that two DSF nodes are part of. In the case where two DSF Hubs or Agentless Gateways have the same "hadr_pair_id", the DSF Reachability Analyzer tool will verify network connectivity between them as part of its analysis.</li>
+      <li><code>subnet</code>: The ID of the subnet where the DSF Hub/Agentless Gateway is deployed.</li>
+      <li><code>security_group_id</code>: The ID of the security group associated with the DSF Hub/Agentless Gateway.</li>
+      <li><code>region</code>: The AWS region where the DSF Hub/Agentless Gateway is deployed.</li>
+      <li><code>peering_connection_id</code>: The ID of the VPC peering connection that connects the DSF Hub/Agentless Gateway to the target VPC. VPC peering is only necessary when two DSF nodes are located in different regions.</li>
+      <li><code>outbound_internet</code>: An object that defines the outbound internet configuration for the DSF Hub/Agentless Gateway. This object contains the following fields:
           <ul>
-            <li><code>type</code>: The type of outbound internet connection. Can be either "NAT_GATEWAY" or "INTERNET_GATEWAY".</li>
-            <li><code>id</code>: The ID of the NAT or internet gateway to use for outbound traffic.</li>
+            <li><code>type</code>: The type of outbound internet connection. Currently, the only valid option is "NAT_GATEWAY". Additional options may be added in future releases.</li>
+            <li><code>id</code>: The ID of the NAT gateway to use for outbound traffic.</li>
           </ul>
       </li>
     </ul>
