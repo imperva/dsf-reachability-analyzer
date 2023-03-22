@@ -57,7 +57,7 @@ def parse_plan(data):
     for hub in data["hub"]:
         # Iterate over the hub list again to find other hubs with the same hadr_pair_id
         for other_hub in data["hub"]:
-            if hub["hadr_pair_id"] == other_hub["hadr_pair_id"] and hub["friendly_name"] != other_hub["friendly_name"]:
+            if "hadr_pair_id" in hub and "hadr_pair_id" in other_hub and hub["hadr_pair_id"] == other_hub["hadr_pair_id"] and hub["friendly_name"] != other_hub["friendly_name"]:
                 subnet_tuple = (hub["subnet"], other_hub["subnet"])
                 subnet_tuple2 = (other_hub["subnet"], hub["subnet"])
 
@@ -88,7 +88,7 @@ def parse_plan(data):
                 
     for gw in data["gw"]:
         for other_gw in data["gw"]:
-            if gw["hadr_pair_id"] == other_gw["hadr_pair_id"] and gw["friendly_name"] != other_gw["friendly_name"]:
+            if "hadr_pair_id" in gw and "hadr_pair_id" in other_gw and gw["hadr_pair_id"] == other_gw["hadr_pair_id"] and gw["friendly_name"] != other_gw["friendly_name"]:
                 subnet_tuple = (gw["subnet"], other_gw["subnet"])
                 subnet_tuple2 = (other_gw["subnet"], gw["subnet"])
                 if subnet_tuple not in combination_set and subnet_tuple2 not in combination_set:
