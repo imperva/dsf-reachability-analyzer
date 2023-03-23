@@ -212,7 +212,7 @@ def create_and_fetch_insights(subnet1_eni, dest_id, portInt, client, path_result
 def create_eni(subnetId, client, securityGroupId=None):
     prints(f"Creating eni in region: {client.meta.config.region_name} and in Subnet: {subnetId}")
     response = client.create_network_interface(
-        Description='eDSF Sonar Network Analyzer Tool - ' + subnetId,
+        Description='DSF Reachability Validator Tool - ' + subnetId,
         SubnetId = subnetId, 
         Groups=[securityGroupId] if securityGroupId else None,
         TagSpecifications=[
@@ -342,7 +342,7 @@ def get_nat_gateway_enis(nat_gateway_id, client):
 
 
 if __name__ == '__main__':
-    print_header1("eDSF Sonar Network Analyzer Tool")
+    print_header1("DSF Reachability Validator Tool")
     inputs = get_inputs()
     result = load_plan()
     clients = init_client(inputs["access_key"], inputs["secret_key"], result["regions"])

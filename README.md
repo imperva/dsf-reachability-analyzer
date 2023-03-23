@@ -1,5 +1,5 @@
 <div class="markdown prose w-full break-words dark:prose-invert light">
-   <h1>DSF Reachability Analysis Tool</h1>
+   <h1>DSF Reachability Validator Tool</h1>
    <p>This is a tool that allows users to analyze network connectivity between two subnets in an Amazon VPC. The tool uses the AWS EC2 Network Insights feature to create a path between the source and destination subnets and analyzes the connectivity on specified ports.</p>
    <h2>Prerequisites</h2>
    <ul>
